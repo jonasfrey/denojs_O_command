@@ -33,3 +33,10 @@ var s_command = `nonexistingcommand &> nonexistingfile.txt`
 console.log(`write stderr and stdout from command to file: ${s_command}`)
 var o_command = await f_o_command(s_command.split(' '))
 console.log(o_command)
+
+
+var s_command = `sensors`
+var o_command = await f_o_command(s_command.split(' '));
+console.log(o_command)
+console.log(o_command.s_stdout)
+console.log(o_command.s_stderr)

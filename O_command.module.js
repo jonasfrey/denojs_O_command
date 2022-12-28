@@ -126,7 +126,6 @@ var f_o_command = async function(
         var a_s_part__command = a_s_arg.join(" ").split(s_redirection_symbol);
         var s_command_before_redirection_symbol = a_s_part__command[0].trim();
         var s_command_after_redirection_symbol = a_s_part__command[1].trim();
-        s_command = s_command_before_redirection_symbol;
         // console.log(s_redirection_symbol)
         // var o_stat = await Deno.stat(s_command_after_redirection_symbol);
         // if(!o_stat.isFile){
@@ -137,7 +136,6 @@ var f_o_command = async function(
     }
     var n_ts_ms_start = new Date().getTime();
 
-    console.log(`running command: '${s_command}', in folder: '${Deno.cwd()}'`);
     
 
     if(s_redirection_symbol == "<"){
@@ -155,10 +153,15 @@ var f_o_command = async function(
             return null;
         }
     }
-    
+    if(!s_command_before_redirection_symbol){
+        s_command_before_redirection_symbol = s_command;
+    }
+    // console.log(s_command.split(" "))
+    console.log(`'${s_command}': command has been run inside folder: '${Deno.cwd()}'`);
+
     const o_process = await Deno.run(
         {
-            cmd:s_command.split(" "),
+            cmd:s_command_before_redirection_symbol.split(" "),
             stdout: "piped",
             stderr: "piped",
             stdin: (s_redirection_symbol == "<") ? o_file_redirect_from.rid : 'inherit'
