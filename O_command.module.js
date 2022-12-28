@@ -157,8 +157,7 @@ var f_o_command = async function(
         s_command_before_redirection_symbol = s_command;
     }
     // console.log(s_command.split(" "))
-    console.log(`'${s_command}': command has been run inside folder: '${Deno.cwd()}'`);
-
+    console.log(`'${s_command}': trying to run command inside folder: '${Deno.cwd()}'`);
     const o_process = await Deno.run(
         {
             cmd:s_command_before_redirection_symbol.split(" "),
