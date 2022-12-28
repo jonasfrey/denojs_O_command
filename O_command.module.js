@@ -203,6 +203,7 @@ var f_o_command = async function(
     var n_ts_ms_end = new Date().getTime();
     const { code: n_return_code } = await o_process.status();
 
+    // the programmer has to check for errors by him-/her- self
     if(
         n_return_code != 0 && s_stderr != "" // a few programms will throw an error but do not have an return code other than 0
         ||
@@ -214,6 +215,8 @@ var f_o_command = async function(
             ${n_return_code}
             stderr is:
             ${s_stderr} 
+            stdout is:
+            ${s_stdout} 
         `
         throw new Error(s_error)
     }

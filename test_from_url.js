@@ -1,4 +1,4 @@
-import { f_o_command } from "https://deno.land/x/o_command@0.2/O_command.module.js"
+import { f_o_command } from "https://deno.land/x/o_command@0.3/O_command.module.js"
 
 
 var s_command = `ls`
