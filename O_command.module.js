@@ -1,3 +1,10 @@
+
+import {
+    readableStreamFromReader,
+    writableStreamFromWriter,
+  } from "https://deno.land/std@0.168.0/streams/conversion.ts";
+  import { mergeReadableStreams } from "https://deno.land/std@0.168.0/streams/merge.ts";
+
 class O_command_log{
     constructor(
         n_ts_ms_start,
@@ -44,33 +51,145 @@ class O_command{
 var f_o_command = async function(
     a_s_arg
 ){
-    var a_s_pipe_symbol = a_s_arg.filter(s=>s.trim() == '|');
+    var s_command = a_s_arg.join(" ")
     var a_s_biggerthan_symbol = a_s_arg.filter(s=>s.trim() == '>');
     var a_s_smallerthan_symbol = a_s_arg.filter(s=>s.trim() == '<');
-    if(a_s_pipe_symbol.length > 0){
-        console.log(`command won't be run, the pipe symbol (|) is not yet supported`);
-        return null;
-    }
+
     if(a_s_biggerthan_symbol.length > 1){
-        console.log(`command won't be run, multiple '<' symbols are not supported`);
+        console.log(`'${s_command}': command won't be run, multiple '<' symbols are not supported`);
         return null;
     }
     if(a_s_smallerthan_symbol.length > 1){
-        console.log(`command won't be run, multiple '<' symbols are not supported`);
+        console.log(`'${s_command}': command won't be run, multiple '<' symbols are not supported`);
         return null;
     }
+
+    if(a_s_biggerthan_symbol.length == 1 && a_s_smallerthan_symbol.length > 1){
+        console.log(`'${s_command}': command won't be run, using '<' and  '>' at the same time is not yet supported`);
+        return null;
+    }
+
+    // ... there may be more redirection symbols ? 
+    var a_s_custom_redirection_symbols_not_supported_yet = [
+        `<<`, 
+        '&>', 
+        '<&', 
+        '&>>', 
+        '2>&1', 
+        '>&1', 
+        '|', 
+        '>>'
+    ];
+    for(var s_arg of a_s_arg){
+        // https://askubuntu.com/questions/420981/how-do-i-save-terminal-output-to-a-file
+        // Yes it is possible, just redirect the output (AKA stdout) to a file:
+        // `SomeCommand > SomeFile.txt`  
+
+        // Or if you want to append data:
+        // `SomeCommand >> SomeFile.txt`
+
+        // If you want stderr as well use this:
+        // `SomeCommand &> SomeFile.txt`
+
+        // or this to append:
+        // `SomeCommand &>> SomeFile.txt`
+
+        // if you want to have both stderr and output displayed on the console and in a file use this:
+        // (If you want the output only, drop the 2)
+        // `SomeCommand 2>&1 | tee SomeFile.txt`
+        // console.log(`${a_s_custom_redirection_symbols_not_supported_yet} ?= ${s_arg.trim()}`)
+        if(a_s_custom_redirection_symbols_not_supported_yet.indexOf(s_arg.trim()) != -1){
+            console.log(`'${s_command}': command will not be run: the following redirection symbols are not yet supported: ${a_s_custom_redirection_symbols_not_supported_yet.join(',')}`)
+            return null;
+        }
+    }
+
+
+
+    var s_command = a_s_arg.join(' ');
+    var s_path_file__redirect_to_or_from = '';
+    
+    var s_redirection_symbol = "";
+
+    if(a_s_biggerthan_symbol.length == 1){
+        s_redirection_symbol = ">"
+    }
+    if(a_s_smallerthan_symbol.length == 1){
+        s_redirection_symbol = "<"
+    }
+
+    if(
+        a_s_biggerthan_symbol.length == 1 
+        ||
+        a_s_smallerthan_symbol.length == 1
+    ){
+        var a_s_part__command = a_s_arg.join(" ").split(s_redirection_symbol);
+        var s_command_before_redirection_symbol = a_s_part__command[0].trim();
+        var s_command_after_redirection_symbol = a_s_part__command[1].trim();
+        s_command = s_command_before_redirection_symbol;
+        // console.log(s_redirection_symbol)
+        // var o_stat = await Deno.stat(s_command_after_redirection_symbol);
+        // if(!o_stat.isFile){
+        //     console.log(`${s_command_after_redirection_symbol}: the part after the redirection symbol must be a name of a file, everything else is not supported yet`);
+        //     return null;
+        // }
+        s_path_file__redirect_to_or_from = s_command_after_redirection_symbol;
+    }
     var n_ts_ms_start = new Date().getTime();
-    var s_command = a_s_arg.join(" ")
 
     console.log(`running command: '${s_command}', in folder: '${Deno.cwd()}'`);
     
+
+    if(s_redirection_symbol == "<"){
+        var o_file_redirect_from = null;
+        try{
+            var o_stat = await Deno.stat(
+                s_command_after_redirection_symbol
+            );
+            o_file_redirect_from = await Deno.open(
+                s_command_after_redirection_symbol
+            );
+        }catch(o_e){
+            console.log(o_e.message);
+            console.log(`'${s_command}': command wont be run, '${s_command_after_redirection_symbol}': seems to be an non existing file name to redirect output from`);
+            return null;
+        }
+    }
+    
     const o_process = await Deno.run(
         {
-            cmd:a_s_arg,
+            cmd:s_command.split(" "),
             stdout: "piped",
             stderr: "piped",
+            stdin: (s_redirection_symbol == "<") ? o_file_redirect_from.rid : 'inherit'
         }
-    )
+    );
+    if(s_redirection_symbol == ">"){
+        var o_file_redirect_to = null;
+        try{
+            o_file_redirect_to = await Deno.open(s_command_after_redirection_symbol, {
+                read: true,
+                write: true,
+                create: true,
+            });
+        }catch(o_e){
+            console.log(o_e.message);
+            console.log(`'${s_command}': command wont be run, '${s_command_after_redirection_symbol}': seems to be an invalid file name to redirect output to`);
+            return null;
+        }
+
+        // const o_writable_stream = await writableStreamFromWriter(o_file_redirect_to);
+        // const o_readable_stream__stdout = readableStreamFromReader(o_process.stdout);
+        // const o_readable_stream__stderr = readableStreamFromReader(o_process.stderr);
+        // const o_readable_stream__merged = mergeReadableStreams(
+        //     o_readable_stream__stdout,
+        //     o_readable_stream__stderr
+        // );
+        // o_readable_stream__merged.pipeTo(o_writable_stream).then(
+        //     // () => console.log("pipe join done")
+        // );
+    }
+
     // output needs to be read before .status() or .close()!!!!!
     const a_n_byte__stdout = await o_process.output();
     const a_n_byte__stderr = await o_process.stderrOutput();
@@ -111,6 +230,12 @@ var f_o_command = async function(
         s_stdout,
         s_stderr
     )
+    
+    // returns a promise that resolves when the process is killed/closed
+    
+    if(s_redirection_symbol == ">"){
+        const b_written = await o_file_redirect_to.write(a_n_byte__stdout);
+    }
 
     // console.log(o_command)
     return Promise.resolve(o_command)
