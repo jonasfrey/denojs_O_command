@@ -90,7 +90,7 @@ var f_o_command = async function(
     if(b_no_bash_mc_prefix){
         a_s_arg = s_command.split(" ")
     }
-    console.log(`'${a_s_arg.join(' ')}': trying to run command inside folder: '${Deno.cwd()}'`);
+    // console.log(`'${a_s_arg.join(' ')}': trying to run command inside folder: '${Deno.cwd()}'`);
 
     const o_process = await Deno.run(
         {
