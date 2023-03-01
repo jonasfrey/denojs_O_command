@@ -75,8 +75,10 @@ var f_o_command = async function(
         // gument command_string.  If there are arguments after the command_string, the first
         // argument  is  assigned to $0 and any remaining arguments are assigned to the posi‐
         // tional parameters.  The assignment to $0 sets the name of the shell, which is used
-        console.log(`'bash -c ' will be added as a prefix to the command '${s_command}' !`)
-        console.log(`'f_o_command(a_s_arg, true)' <- use this to run a command without the 'bash -c ' prefix'`)
+        // we cannot just log to the console since cross programming language wise binary calls depend on a clean console to 
+        // be able to parse the output as json
+        // console.log(`'bash -c ' will be added as a prefix to the command '${s_command}' !`)
+        // console.log(`'f_o_command(a_s_arg, true)' <- use this to run a command without the 'bash -c ' prefix'`)
     }
 
     var n_ts_ms_start = new Date().getTime();
