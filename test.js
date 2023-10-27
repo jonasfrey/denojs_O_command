@@ -1,47 +1,48 @@
+// import {O_command, f_o_command_old as f_o_command} from "./O_command.module.js"
 import {O_command, f_o_command} from "./O_command.module.js"
 
-var s_command = `ls -latrh`
-console.log(`simple ls : ${s_command}`)
-var o_command = await f_o_command(s_command.split(' '))
-console.log(o_command)
+let a_s_command = [
+    `ls -latrh`,
+    `ls -latrh`,
+    `echo 'this should work'`,
+    `echo 'hello' > hello.txt`,
+    `echo 'hello line 2' >> hello2.txt`,
+    `less < hello.txt`,
+    `less < hello.txt`,
+    `sensors`,
+    `nvidia-smi`,
+    `nonexistingcommand &> nonexistingfile.txt`
+]
+for(let s_command of a_s_command){
+    console.log(`running command ${s_command}`)
+    try {
+        let o_command = await f_o_command(s_command);
+        console.log(o_command)
+    } catch (error) {
+        console.log(error)
+    }
+    console.log('---')
 
-var s_command = `ls -latrh`
-console.log(`simple ls running with f_o_command(..., true) : ${s_command}`)
-var o_command = await f_o_command(s_command.split(' '), true)
-console.log(o_command)
+}
+a_s_command = [
+    `ping 1.1.1.1 -c 3`,
+    `ping asdf.non.existing.domain.asdf -c 3`,
+]
+// commands with continiuous output
+for(let s_command of a_s_command){
 
-var s_command = `echo 'this should work'`
-console.log(`simple echo : ${s_command}`)
-var o_command = await f_o_command(s_command.split(' '))
-console.log(o_command)
+    console.log(`running command ${s_command}`)
+    try {
+        let o_command = await f_o_command(s_command, 
+            async function(s_tmp_output, a_n_u8){
+                console.log(`s_tmp_output:`)
+                await Deno.writeAll(Deno.stdout, a_n_u8)
+            }
+        );
+        console.log(o_command)
+    } catch (error) {
+        console.log(error)
+    }
+    console.log('---')
 
-var s_command = `echo 'hello' > hello.txt`
-console.log(`test echo to non existing file : ${s_command}`)
-var o_command = await f_o_command(s_command.split(' '))
-console.log(o_command)
-
-var s_command = `echo 'hello line 2' >> hello2.txt`
-console.log(`test append echo to non existing file: ${s_command}`)
-var o_command = await f_o_command(s_command.split(' '))
-console.log(o_command)
-
-var s_command = `less < hello.txt`
-console.log(`redirect file into less: ${s_command}`)
-var o_command = await f_o_command(s_command.split(' '))
-console.log(o_command)
-
-var s_command = `less < hello.txt`
-console.log(`redirect file into less: ${s_command}`)
-var o_command = await f_o_command(s_command.split(' '))
-console.log(o_command)
-
-var s_command = `sensors`
-var o_command = await f_o_command(s_command.split(' '));
-console.log(o_command)
-console.log(o_command.s_stdout)
-console.log(o_command.s_stderr)
-
-var s_command = `nonexistingcommand &> nonexistingfile.txt`
-console.log(`write stderr and stdout from command to file: ${s_command}`)
-var o_command = await f_o_command(s_command.split(' '))
-console.log(o_command)
+}
