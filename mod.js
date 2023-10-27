@@ -1,1 +1,1 @@
-export * from './O_command.module'
+export * from './O_command.module.js'
